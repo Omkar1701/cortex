@@ -54,20 +54,35 @@ class CortexCLI:
             console.print(f"[dim][DEBUG] {message}[/dim]")
 
     def _get_api_key(self) -> Optional[str]:
-        is_valid, provider, error = validate_api_key()
+        # Check if using Ollama (no API key needed)
+        provider = self._get_provider()
+        if provider == 'ollama':
+            self._debug("Using Ollama (no API key required)")
+            return "ollama-local"  # Placeholder for Ollama
+
+        is_valid, detected_provider, error = validate_api_key()
         if not is_valid:
             self._print_error(error)
             cx_print("Run [bold]cortex wizard[/bold] to configure your API key.", "info")
+            cx_print("Or use [bold]CORTEX_PROVIDER=ollama[/bold] for offline mode.", "info")
             return None
         api_key = os.environ.get('ANTHROPIC_API_KEY') or os.environ.get('OPENAI_API_KEY')
         return api_key
 
     def _get_provider(self) -> str:
-        if os.environ.get('OPENAI_API_KEY'):
-            return 'openai'
-        elif os.environ.get('ANTHROPIC_API_KEY'):
+        # Check environment variable for explicit provider choice
+        explicit_provider = os.environ.get('CORTEX_PROVIDER', '').lower()
+        if explicit_provider in ['ollama', 'openai', 'claude']:
+            return explicit_provider
+
+        # Auto-detect based on available API keys
+        if os.environ.get('ANTHROPIC_API_KEY'):
             return 'claude'
-        return 'openai'
+        elif os.environ.get('OPENAI_API_KEY'):
+            return 'openai'
+
+        # Fallback to Ollama for offline mode
+        return 'ollama'
 
     def _print_status(self, emoji: str, message: str):
         """Legacy status print - maps to cx_print for Rich output"""
