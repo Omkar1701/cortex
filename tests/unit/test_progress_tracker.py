@@ -283,9 +283,12 @@ class TestProgressTracker:
         mock_notification.notify = Mock()
 
         with patch("cortex.progress_tracker.PLYER_AVAILABLE", True):
-            with patch.dict("sys.modules", {"plyer": MagicMock(), "plyer.notification": mock_notification}):
+            with patch.dict(
+                "sys.modules", {"plyer": MagicMock(), "plyer.notification": mock_notification}
+            ):
                 # Import after patching to get the mock
                 import cortex.progress_tracker as pt
+
                 pt.plyer_notification = mock_notification
 
                 tracker = ProgressTracker("Test", enable_notifications=True)

