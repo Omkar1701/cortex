@@ -17,7 +17,8 @@ BASE_ENV = {
     "PYTHONPATH": "/workspace",
     "PYTHONDONTWRITEBYTECODE": "1",
 }
-PIP_BOOTSTRAP = "python -m pip install --quiet -r /workspace/requirements.txt"
+PIP_BOOTSTRAP = "python -m pip install --quiet --upgrade pip setuptools && python -m pip install --quiet --no-cache-dir -r /workspace/requirements.txt"
+PIP_BOOTSTRAP_DEV = "python -m pip install --quiet --upgrade pip setuptools && python -m pip install --quiet --no-cache-dir -r /workspace/requirements.txt -r /workspace/requirements-dev.txt"
 
 
 @unittest.skipUnless(docker_available(), "Docker is required for integration tests")
@@ -109,7 +110,16 @@ class TestEndToEndWorkflows(unittest.TestCase):
             "CORTEX_PROVIDER": "fake",
             "CORTEX_FAKE_COMMANDS": json.dumps({"commands": ["echo plan"]}),
         }
-        result = self._run("pytest tests/ -v --ignore=tests/integration", env=env)
+        # Use PIP_BOOTSTRAP_DEV to install pytest and other dev dependencies
+        effective_env = dict(BASE_ENV)
+        effective_env.update(env)
+        result = run_in_docker(
+            DEFAULT_IMAGE,
+            f"{PIP_BOOTSTRAP_DEV} && pytest tests/ -v --ignore=tests/integration",
+            env=effective_env,
+            mounts=[MOUNT],
+            workdir="/workspace",
+        )
 
         self.assertTrue(result.succeeded(), msg=result.stderr)
         combined_output = f"{result.stdout}\n{result.stderr}"
